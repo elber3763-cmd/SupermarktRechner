@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.EinkaufsScanner" parent="android:Theme.Material.Light">
+        <item name="android:colorPrimary">@color/teal_primary</item>
+        <item name="android:colorPrimaryDark">@color/teal_dark</item>
+        <item name="android:colorAccent">@color/teal_accent</item>
+    </style>
+
+    <color name="teal_primary">#009688</color>
+    <color name="teal_dark">#00796B</color>
+    <color name="teal_accent">#26C6DA</color>
+    <color name="error_red">#E53935</color>
+</resources>

@@ -1,0 +1,28 @@
+# Gradle
+.gradle/
+build/
+*.apk
+*.aab
+
+# Android Studio
+.idea/
+*.iml
+.DS_Store
+local.properties
+
+# Build artifacts
+bin/
+gen/
+out/
+
+# Runtime
+.classpath
+.project
+.settings/
+
+# Misc
+*.swp
+*.swo
+*~
+.vscode/
+*.hprof

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Einkaufs-Scanner</string>
+    <string name="manual_entry">Manuell</string>
+    <string name="scan_price">Preis scannen</string>
+    <string name="camera_placeholder">Kamera bereit\nTippe auf \'Preis scannen\' für ein Foto</string>
+    <string name="processing">Verarbeitung läuft...</string>
+    <string name="error">Fehler</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Abbrechen</string>
+</resources>
