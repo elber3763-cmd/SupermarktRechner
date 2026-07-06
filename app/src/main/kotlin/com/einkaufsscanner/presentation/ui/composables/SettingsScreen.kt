@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,9 +24,17 @@ fun SettingsScreen(
 ) {
     val scannerWidth by viewModel.scannerWidth.collectAsState()
     val scannerHeight by viewModel.scannerHeight.collectAsState()
+    var showInfoDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadSettings()
+    }
+
+    if (showInfoDialog) {
+        InfoDialog(
+            appVersion = "1.0",
+            onDismiss = { showInfoDialog = false }
+        )
     }
 
     Column(
@@ -41,10 +50,16 @@ fun SettingsScreen(
                     Icon(Icons.Default.ArrowBack, contentDescription = "Zurück")
                 }
             },
+            actions = {
+                IconButton(onClick = { showInfoDialog = true }) {
+                    Icon(Icons.Default.Info, contentDescription = "Info")
+                }
+            },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color(0xFF009688),
                 titleContentColor = Color.White,
                 navigationIconContentColor = Color.White,
+                actionIconContentColor = Color.White,
             ),
         )
 

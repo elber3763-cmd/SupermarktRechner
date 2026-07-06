@@ -80,6 +80,11 @@ dependencies {
     // ML Kit Text Recognition
     implementation("com.google.mlkit:text-recognition:16.0.1")
 
+    // TensorFlow Lite
+    implementation("org.tensorflow:tensorflow-lite:2.17.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.5.0")
+    implementation("org.tensorflow:tensorflow-lite-metadata:0.5.0")
+
     // JSON for Cloud Vision API requests (already included via Android)
     // No additional dependency needed - org.json is part of Android SDK
 

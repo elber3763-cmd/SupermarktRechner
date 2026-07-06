@@ -134,3 +134,53 @@ fun LoadingDialog(visible: Boolean) {
         )
     }
 }
+
+@Composable
+fun InfoDialog(
+    appVersion: String = "1.0",
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Info") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Einkaufsscanner", style = MaterialTheme.typography.titleSmall)
+                Text(
+                    "Eine praktische App zum Scannen und Berechnen von Einkaufspreisen mit OCR-Unterstützung.",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+
+                Divider(modifier = Modifier.padding(vertical = 4.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("Version:", style = MaterialTheme.typography.labelMedium)
+                    Text(appVersion, style = MaterialTheme.typography.labelMedium)
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text("Entwickler:", style = MaterialTheme.typography.labelMedium)
+                    Text("Koorosh", style = MaterialTheme.typography.labelMedium)
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 4.dp))
+
+                Text(
+                    "© 2026 Koorosh. Alle Rechte vorbehalten.",
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = onDismiss) {
+                Text("Schließen")
+            }
+        },
+    )
+}

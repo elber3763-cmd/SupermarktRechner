@@ -18,6 +18,7 @@ import android.content.pm.PackageManager
 import androidx.core.content.ContextCompat
 import android.widget.Toast
 import com.einkaufsscanner.data.camera.CameraManager
+import com.einkaufsscanner.presentation.ui.composables.IntroScreenSpectacular
 import com.einkaufsscanner.presentation.ui.composables.ManualPriceEntryDialog
 import com.einkaufsscanner.presentation.ui.composables.ShoppingCartScreen
 import com.einkaufsscanner.presentation.ui.composables.SettingsScreen
@@ -52,13 +53,18 @@ class MainActivity : ComponentActivity() {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     val viewModel: ShoppingViewModel = hiltViewModel()
                     var showSettings by remember { mutableStateOf(false) }
+                    var showIntro by remember { mutableStateOf(true) }
 
                     // NEW: Connect camera's real-time text recognition to viewModel
                     cameraManager.onTextRecognized = { recognizedText ->
                         viewModel.processRecognizedText(recognizedText)
                     }
 
-                    if (showSettings) {
+                    if (showIntro) {
+                        IntroScreenSpectacular(
+                            onIntroComplete = { showIntro = false }
+                        )
+                    } else if (showSettings) {
                         SettingsScreen(
                             onNavigateBack = { showSettings = false }
                         )
