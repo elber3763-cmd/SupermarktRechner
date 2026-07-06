@@ -1,6 +1,7 @@
 package com.einkaufsscanner
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
@@ -50,9 +51,12 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     val viewModel: ShoppingViewModel = hiltViewModel()
-                    var showManualEntry by remember { mutableStateOf(false) }
                     var showSettings by remember { mutableStateOf(false) }
-                    var manualEntryPrefill by remember { mutableStateOf("") }
+
+                    // NEW: Connect camera's real-time text recognition to viewModel
+                    cameraManager.onTextRecognized = { recognizedText ->
+                        viewModel.processRecognizedText(recognizedText)
+                    }
 
                     if (showSettings) {
                         SettingsScreen(
@@ -63,29 +67,11 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             cameraManager = cameraManager,
                             onScanPrice = {
-                                lifecycleScope.launch {
-                                    try {
-                                        val bitmap = cameraManager.takePhoto()
-                                        viewModel.processPriceFromImage(bitmap)
-                                    } catch (e: Exception) {
-                                        e.printStackTrace()
-                                    }
-                                }
-                            },
-                            onManualEntry = { prefill ->
-                                manualEntryPrefill = prefill
-                                showManualEntry = true
+                                // This is only called when turning camera ON, not for actual scanning
+                                Log.d("MainActivity", "Camera ON button pressed")
                             },
                             onOpenSettings = { showSettings = true }
                         )
-
-                        if (showManualEntry) {
-                            ManualPriceEntryDialog(
-                                viewModel = viewModel,
-                                onDismiss = { showManualEntry = false },
-                                prefill = manualEntryPrefill,
-                            )
-                        }
                     }
                 }
             }
