@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.camera.view.PreviewView
+import androidx.compose.ui.platform.LocalContext
 import com.einkaufsscanner.data.camera.CameraManager
 import com.einkaufsscanner.domain.model.CartItem
 import com.einkaufsscanner.presentation.viewmodel.ShoppingViewModel
@@ -77,10 +78,10 @@ fun ShoppingCartScreen(
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White),
-    ) {
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White),
+        ) {
         // Header with Settings button and Clear Cart button
         TopAppBar(
             title = { Text("Einkaufs-Scanner v1.0") },
@@ -230,19 +231,17 @@ fun ShoppingCartScreen(
             cameraManager = cameraManager,
             modifier = Modifier.fillMaxWidth()
         )
-    }
 
-
-
-    // Show loading indicator
-    if (uiState.isLoading) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.3f)),
-            contentAlignment = Alignment.Center,
-        ) {
-            CircularProgressIndicator(color = Color(0xFF009688))
+        // Show loading indicator
+        if (uiState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                CircularProgressIndicator(color = Color(0xFF009688))
+            }
         }
     }
 }
@@ -254,7 +253,9 @@ fun CameraPreviewArea(
     scannerWidthPercent: Float = 0.98f,
     scannerHeightPercent: Float = 0.84f,
 ) {
-    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    val context = LocalContext.current
+    val lifecycleOwner = context as? androidx.lifecycle.LifecycleOwner
+        ?: throw IllegalStateException("Context must be a LifecycleOwner")
 
     Log.d("CameraPreviewArea", "🎥 CameraPreviewArea composing - setting up camera")
 
@@ -448,7 +449,7 @@ fun BottomActionBar(
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Button(
                     onClick = { onManualEntry() },
@@ -460,7 +461,7 @@ fun BottomActionBar(
                 ) {
                     Icon(Icons.Default.Keyboard, contentDescription = null, tint = Color(0xFF009688))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Manuell", color = Color(0xFF009688), fontSize = 13.sp, maxLines = 1)
+                    Text("Manuell", color = Color(0xFF009688), fontSize = 12.sp, maxLines = 1)
                 }
 
                 Button(
@@ -481,9 +482,9 @@ fun BottomActionBar(
                     Icon(Icons.Default.Camera, contentDescription = null, tint = Color(0xFF009688))
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        if (isCameraActive) "Preis scannen" else "Kamera an",
+                        if (isCameraActive) "Preis" else "Kamera",
                         color = Color(0xFF009688),
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         maxLines = 1
                     )
                 }

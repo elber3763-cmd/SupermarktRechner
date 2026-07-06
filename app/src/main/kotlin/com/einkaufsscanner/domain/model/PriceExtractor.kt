@@ -346,4 +346,31 @@ object PriceExtractor {
 
         return results
     }
+
+    fun extractDigitsOnly(text: String): String {
+        return text.filter { it.isDigit() }
+    }
+
+    fun formatLiveDigitsAsPrice(digits: String): String? {
+        if (digits.isEmpty()) return null
+
+        val normalized = digits.replace(Regex("[^0-9]"), "")
+        if (normalized.isEmpty()) return null
+
+        // Always assume last 2 digits are cents
+        val digitsString = normalized.padStart(3, '0')  // "5" -> "005", "99" -> "099", "1299" -> "1299"
+
+        val euros = digitsString.substring(0, digitsString.length - 2).toIntOrNull() ?: 0
+        val cents = digitsString.substring(digitsString.length - 2).toIntOrNull() ?: 0
+
+        if (cents > 99) return null
+
+        val price = euros + (cents / 100f)
+
+        return if (price < 0.05f || price > 9999.99f) {
+            null
+        } else {
+            String.format("%.2f", price).replace(".", ",")
+        }
+    }
 }

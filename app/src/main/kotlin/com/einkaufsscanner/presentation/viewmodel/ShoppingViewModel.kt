@@ -303,4 +303,5 @@ class ShoppingViewModel @Inject constructor(
     fun formatEur(value: Float): String {
         return String.format("%.2f EUR", value).replace(".", ",")
     }
+
 }
