@@ -1,7 +1,9 @@
 package com.einkaufsscanner.di
 
 import android.content.Context
+import androidx.room.Room
 import com.einkaufsscanner.data.camera.CameraManager
+import com.einkaufsscanner.data.database.ShoppingDatabase
 import com.einkaufsscanner.data.repository.ShoppingCartRepository
 import dagger.Module
 import dagger.Provides
@@ -16,8 +18,22 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideShoppingCartRepository(): ShoppingCartRepository {
-        return ShoppingCartRepository()
+    fun provideShoppingDatabase(
+        @ApplicationContext context: Context
+    ): ShoppingDatabase {
+        return Room.databaseBuilder(
+            context,
+            ShoppingDatabase::class.java,
+            "shopping_database"
+        ).build()
+    }
+
+    @Singleton
+    @Provides
+    fun provideShoppingCartRepository(
+        database: ShoppingDatabase
+    ): ShoppingCartRepository {
+        return ShoppingCartRepository(database)
     }
 
     @Singleton

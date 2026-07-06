@@ -80,8 +80,16 @@ dependencies {
     // ML Kit Text Recognition
     implementation("com.google.mlkit:text-recognition:16.0.1")
 
+    // JSON for Cloud Vision API requests (already included via Android)
+    // No additional dependency needed - org.json is part of Android SDK
+
     // DataStore for Preferences
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    // Room Database
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
 
     // CameraX
     implementation("androidx.camera:camera-core:1.3.0")

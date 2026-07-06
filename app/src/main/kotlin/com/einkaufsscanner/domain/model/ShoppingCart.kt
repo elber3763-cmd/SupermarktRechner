@@ -1,7 +1,11 @@
 package com.einkaufsscanner.domain.model
 
+import java.util.concurrent.atomic.AtomicLong
+
+private val idGenerator = AtomicLong(System.currentTimeMillis())
+
 data class CartItem(
-    val id: Long = System.currentTimeMillis(),
+    val id: Long = idGenerator.incrementAndGet(),
     val name: String,
     val price: Float,
 )
