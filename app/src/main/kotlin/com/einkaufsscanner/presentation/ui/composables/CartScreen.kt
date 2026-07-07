@@ -1,18 +1,24 @@
 package com.einkaufsscanner.presentation.ui.composables
 
 import android.util.Log
+import android.content.Intent
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.PowerSettingsNew
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.shape.CircleShape
@@ -43,6 +49,7 @@ fun ShoppingCartScreen(
     onScanPrice: () -> Unit = {},
     onOpenSettings: () -> Unit = {},
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val scannerWidth by viewModel.scannerWidthPercent.collectAsState()
     val scannerHeight by viewModel.scannerHeightPercent.collectAsState()
@@ -82,9 +89,113 @@ fun ShoppingCartScreen(
                 .fillMaxSize()
                 .background(Color.White),
         ) {
+        // Animated Logo Animations
+        val infiniteTransition = rememberInfiniteTransition(label = "logo_animation")
+
+        val bagRotation by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(3000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "bag_rotation"
+        )
+
+        val coinScale by infiniteTransition.animateFloat(
+            initialValue = 0.8f,
+            targetValue = 1.2f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(1000, easing = EaseInOutQuad),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "coin_scale"
+        )
+
+        val scannerRotation by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = -360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(2500, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "scanner_rotation"
+        )
+
         // Header with Settings button and Clear Cart button
+        val ctx = context  // Use context from Composable scope
         TopAppBar(
-            title = { Text("Einkaufs-Scanner v1.0") },
+            modifier = Modifier.offset(y = (-8).dp),
+            title = {
+                // ONLY LOGO - NO TEXT
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Rotating Scanner Icon
+                    Canvas(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .rotate(scannerRotation)
+                    ) {
+                        val size = this.size.minDimension
+                        val cx = size / 2
+                        val cy = size / 2
+
+                        // Outer circle
+                        drawCircle(
+                            color = Color.White,
+                            radius = size / 2.5f,
+                            center = androidx.compose.ui.geometry.Offset(cx, cy),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(2f)
+                        )
+
+                        // Scan line
+                        drawLine(
+                            color = Color.White,
+                            start = androidx.compose.ui.geometry.Offset(cx - size / 3, cy),
+                            end = androidx.compose.ui.geometry.Offset(cx + size / 3, cy),
+                            strokeWidth = 2f
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(10.dp))
+
+                    // Text Logo
+                    Text(
+                        text = "SCAN SMART",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        letterSpacing = 1.sp
+                    )
+
+                    Spacer(modifier = Modifier.width(4.dp))
+
+                    // Pulsing Price Indicator
+                    Box(
+                        modifier = Modifier
+                            .size(20.dp)
+                            .background(
+                                color = Color(0xFFFFD700),
+                                shape = androidx.compose.foundation.shape.CircleShape
+                            )
+                            .graphicsLayer {
+                                scaleX = coinScale
+                                scaleY = coinScale
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "¥",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color(0xFF009688)
+                        )
+                    }
+                }
+            },
             actions = {
                 IconButton(onClick = {
                     // Show confirmation dialog
@@ -101,6 +212,31 @@ fun ShoppingCartScreen(
                         imageVector = Icons.Default.Settings,
                         contentDescription = "Einstellungen",
                         tint = Color.White,
+                    )
+                }
+
+                // Neustart Button
+                IconButton(onClick = {
+                    val intent = ctx.packageManager.getLaunchIntentForPackage(ctx.packageName)
+                    intent?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    ctx.startActivity(intent)
+                    android.os.Process.killProcess(android.os.Process.myPid())
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Neustart",
+                        tint = Color.White,
+                    )
+                }
+
+                // Beenden Button
+                IconButton(onClick = {
+                    android.os.Process.killProcess(android.os.Process.myPid())
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.PowerSettingsNew,
+                        contentDescription = "Beenden",
+                        tint = Color(0xFFFF6B6B),
                     )
                 }
             },
@@ -489,6 +625,7 @@ fun BottomActionBar(
                     )
                 }
             }
+
         }
     }
 }
