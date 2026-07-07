@@ -62,6 +62,18 @@ class ShoppingViewModel @Inject constructor(
         initialValue = ScannerPreferencesRepository.DEFAULT_SCANNER_HEIGHT,
     )
 
+    val logoSizePercent = preferencesRepository.logoSizePercent.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Lazily,
+        initialValue = ScannerPreferencesRepository.DEFAULT_LOGO_SIZE,
+    )
+
+    val labelSizePercent = preferencesRepository.labelSizePercent.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Lazily,
+        initialValue = ScannerPreferencesRepository.DEFAULT_LABEL_SIZE,
+    )
+
     private val _cartFlow: Flow<com.einkaufsscanner.domain.model.ShoppingCart> = cartRepository.cartFlow
 
     init {

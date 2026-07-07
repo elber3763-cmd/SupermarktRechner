@@ -24,6 +24,8 @@ fun SettingsScreen(
 ) {
     val scannerWidth by viewModel.scannerWidth.collectAsState()
     val scannerHeight by viewModel.scannerHeight.collectAsState()
+    val logoSize by viewModel.logoSize.collectAsState()
+    val labelSize by viewModel.labelSize.collectAsState()
     var showInfoDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -85,6 +87,30 @@ fun SettingsScreen(
                 percentage = (scannerHeight * 100).toInt(),
             )
 
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+            // Logo Size Slider
+            ScannerSizeSlider(
+                label = "Logo-Größe",
+                value = logoSize,
+                onValueChange = { viewModel.updateLogoSize(it) },
+                percentage = (logoSize * 100).toInt(),
+                minValue = 0.5f,
+                maxValue = 2.0f,
+            )
+
+            // Label Size Slider
+            ScannerSizeSlider(
+                label = "Label-Größe (SCAN SMART)",
+                value = labelSize,
+                onValueChange = { viewModel.updateLabelSize(it) },
+                percentage = (labelSize * 100).toInt(),
+                minValue = 0.6f,
+                maxValue = 1.8f,
+            )
+
+            Divider(modifier = Modifier.padding(vertical = 8.dp))
+
             // Preview Box
             ScannerPreview(
                 widthPercent = scannerWidth,
@@ -115,6 +141,8 @@ fun ScannerSizeSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     percentage: Int,
+    minValue: Float = 0.10f,
+    maxValue: Float = 1.0f,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
@@ -133,8 +161,8 @@ fun ScannerSizeSlider(
             Slider(
                 value = value,
                 onValueChange = onValueChange,
-                valueRange = 0.10f..1.0f,  // ← UNLIMITED: 10% to 100% (FULL SCREEN!)
-                steps = 89,  // ← More steps for finer control (0.1% precision)
+                valueRange = minValue..maxValue,
+                steps = 89,
                 modifier = Modifier.weight(1f),
                 colors = SliderDefaults.colors(
                     thumbColor = Color(0xFF009688),

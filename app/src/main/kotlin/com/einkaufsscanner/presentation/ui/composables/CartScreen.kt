@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -53,6 +54,8 @@ fun ShoppingCartScreen(
     val uiState by viewModel.uiState.collectAsState()
     val scannerWidth by viewModel.scannerWidthPercent.collectAsState()
     val scannerHeight by viewModel.scannerHeightPercent.collectAsState()
+    val logoSize by viewModel.logoSizePercent.collectAsState()
+    val labelSize by viewModel.labelSizePercent.collectAsState()
     val isCameraActive = uiState.isCameraActive
 
     // Auto-shutdown camera when inactive to save battery and free resources
@@ -89,110 +92,202 @@ fun ShoppingCartScreen(
                 .fillMaxSize()
                 .background(Color.White),
         ) {
-        // Animated Logo Animations
+        // Animated Logo Animations - Premium Edition
         val infiniteTransition = rememberInfiniteTransition(label = "logo_animation")
 
-        val bagRotation by infiniteTransition.animateFloat(
+        val scannerRotation by infiniteTransition.animateFloat(
             initialValue = 0f,
             targetValue = 360f,
             animationSpec = infiniteRepeatable(
                 animation = tween(3000, easing = LinearEasing),
                 repeatMode = RepeatMode.Restart
             ),
-            label = "bag_rotation"
+            label = "scanner_rotation"
         )
 
-        val coinScale by infiniteTransition.animateFloat(
-            initialValue = 0.8f,
-            targetValue = 1.2f,
+        val pulseGlow by infiniteTransition.animateFloat(
+            initialValue = 0.5f,
+            targetValue = 1.5f,
             animationSpec = infiniteRepeatable(
-                animation = tween(1000, easing = EaseInOutQuad),
+                animation = tween(1500, easing = EaseInOutQuad),
                 repeatMode = RepeatMode.Reverse
             ),
-            label = "coin_scale"
+            label = "pulse_glow"
         )
 
-        val scannerRotation by infiniteTransition.animateFloat(
+        val shimmerValue by infiniteTransition.animateFloat(
             initialValue = 0f,
-            targetValue = -360f,
+            targetValue = 1f,
             animationSpec = infiniteRepeatable(
-                animation = tween(2500, easing = LinearEasing),
+                animation = tween(2000, easing = LinearEasing),
                 repeatMode = RepeatMode.Restart
             ),
-            label = "scanner_rotation"
+            label = "shimmer"
         )
 
         // Header with Settings button and Clear Cart button
         val ctx = context  // Use context from Composable scope
         TopAppBar(
-            modifier = Modifier.offset(y = (-8).dp),
+            modifier = Modifier
+                .offset(y = (-8).dp)
+                .height(68.dp),
             title = {
-                // ONLY LOGO - NO TEXT
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight()
+                        .padding(horizontal = 12.dp)
                 ) {
-                    // Rotating Scanner Icon
-                    Canvas(
+                    // SPECTACULAR Logo - WOW Edition
+                    val dynamicLogoSize = 52.dp * logoSize
+                    Box(
                         modifier = Modifier
-                            .size(24.dp)
-                            .rotate(scannerRotation)
+                            .size(dynamicLogoSize)
+                            .padding(end = 4.dp)
+                            .graphicsLayer {
+                                shadowElevation = 12.dp.toPx()
+                            }
+                            .background(
+                                brush = androidx.compose.ui.graphics.Brush.radialGradient(
+                                    colors = listOf(
+                                        Color.White.copy(alpha = 0.25f),
+                                        Color.White.copy(alpha = 0.08f)
+                                    ),
+                                    center = Offset(0.5f, 0.5f),
+                                    radius = 1f
+                                ),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                            )
+                            .border(
+                                width = 2.dp,
+                                brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                                    colors = listOf(
+                                        Color.White.copy(alpha = 0.6f),
+                                        Color.White.copy(alpha = 0.2f),
+                                        Color(0xFF80DEEA).copy(alpha = 0.4f)
+                                    )
+                                ),
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+                            )
+                            .graphicsLayer {
+                                scaleX = 1f + (pulseGlow - 0.5f) * 0.08f
+                                scaleY = 1f + (pulseGlow - 0.5f) * 0.08f
+                            },
+                        contentAlignment = Alignment.Center
                     ) {
-                        val size = this.size.minDimension
-                        val cx = size / 2
-                        val cy = size / 2
+                        val dynamicCanvasSize = 44.dp * logoSize
+                        Canvas(modifier = Modifier.size(dynamicCanvasSize)) {
+                            val size = (44.dp * logoSize).toPx()
+                            val cx = size / 2
+                            val cy = size / 2
 
-                        // Outer circle
-                        drawCircle(
-                            color = Color.White,
-                            radius = size / 2.5f,
-                            center = androidx.compose.ui.geometry.Offset(cx, cy),
-                            style = androidx.compose.ui.graphics.drawscope.Stroke(2f)
-                        )
+                            // Multi-layer glow effect
+                            val glowRadius1 = (size / 3.2f) * pulseGlow
+                            val glowRadius2 = (size / 2.8f) * pulseGlow
 
-                        // Scan line
-                        drawLine(
-                            color = Color.White,
-                            start = androidx.compose.ui.geometry.Offset(cx - size / 3, cy),
-                            end = androidx.compose.ui.geometry.Offset(cx + size / 3, cy),
-                            strokeWidth = 2f
-                        )
+                            // Outer pulsing glow
+                            drawCircle(
+                                color = Color(0xFF80DEEA).copy(alpha = 0.15f * pulseGlow),
+                                radius = glowRadius2 * 1.3f,
+                                center = Offset(cx, cy)
+                            )
+
+                            // Inner glow
+                            drawCircle(
+                                color = Color(0xFF00BCD4).copy(alpha = 0.2f * pulseGlow),
+                                radius = glowRadius2,
+                                center = Offset(cx, cy)
+                            )
+
+                            // Main ring - gradient effect
+                            drawCircle(
+                                color = Color.White,
+                                radius = glowRadius1,
+                                center = Offset(cx, cy),
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(3f)
+                            )
+
+                            // Premium center jewel
+                            drawCircle(
+                                color = Color(0xFFFFD700),
+                                radius = 5.5f,
+                                center = Offset(cx, cy)
+                            )
+
+                            drawCircle(
+                                color = Color(0xFFFFF59D),
+                                radius = 3f,
+                                center = Offset(cx, cy)
+                            )
+
+                            // Rotating scan beams with shimmer
+                            val angle = (scannerRotation % 360f) * kotlin.math.PI.toFloat() / 180f
+                            val beamLength = glowRadius1 * 0.85f
+
+                            // Primary beam - bright and bold
+                            for (i in 0..2) {
+                                val rotation = angle + (i * 120f * kotlin.math.PI.toFloat() / 180f)
+                                val alpha = 1f - (i * 0.2f)
+                                drawLine(
+                                    color = Color.White.copy(alpha = alpha),
+                                    start = Offset(
+                                        cx + kotlin.math.cos(rotation) * beamLength,
+                                        cy + kotlin.math.sin(rotation) * beamLength
+                                    ),
+                                    end = Offset(
+                                        cx - kotlin.math.cos(rotation) * beamLength,
+                                        cy - kotlin.math.sin(rotation) * beamLength
+                                    ),
+                                    strokeWidth = 2.8f
+                                )
+                            }
+
+                            // Shimmer effect - moving highlight
+                            val shimmerX = cx + kotlin.math.cos(shimmerValue * 2f * kotlin.math.PI.toFloat()) * (glowRadius1 * 0.6f)
+                            val shimmerY = cy + kotlin.math.sin(shimmerValue * 2f * kotlin.math.PI.toFloat()) * (glowRadius1 * 0.6f)
+                            drawCircle(
+                                color = Color.White.copy(alpha = 0.4f),
+                                radius = 2f,
+                                center = Offset(shimmerX, shimmerY)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.width(10.dp))
 
-                    // Text Logo
-                    Text(
-                        text = "SCAN SMART",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                        letterSpacing = 1.sp
-                    )
-
-                    Spacer(modifier = Modifier.width(4.dp))
-
-                    // Pulsing Price Indicator
-                    Box(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .background(
-                                color = Color(0xFFFFD700),
-                                shape = androidx.compose.foundation.shape.CircleShape
-                            )
-                            .graphicsLayer {
-                                scaleX = coinScale
-                                scaleY = coinScale
-                            },
-                        contentAlignment = Alignment.Center
+                    // Premium branding text
+                    Column(
+                        horizontalAlignment = Alignment.Start,
+                        modifier = Modifier.padding(vertical = 4.dp)
                     ) {
+                        // Main brand name - ultra bold and striking
                         Text(
-                            text = "¥",
-                            fontSize = 12.sp,
+                            text = "SCAN SMART",
+                            fontSize = (17.sp * labelSize),
                             fontWeight = FontWeight.ExtraBold,
-                            color = Color(0xFF009688)
+                            color = Color.White,
+                            letterSpacing = (2.sp * labelSize),
+                            lineHeight = (18.sp * labelSize)
                         )
+
+                        // Premium tagline with accent color
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height((12.dp * labelSize))) {
+                            Text(
+                                text = "◆ ",
+                                fontSize = (6.sp * labelSize),
+                                color = Color(0xFFFFD700),
+                                fontWeight = FontWeight.ExtraBold
+                            )
+                            Text(
+                                text = "PREMIUM",
+                                fontSize = (7.sp * labelSize),
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF80DEEA),
+                                letterSpacing = (1.2.sp * labelSize)
+                            )
+                        }
                     }
                 }
             },

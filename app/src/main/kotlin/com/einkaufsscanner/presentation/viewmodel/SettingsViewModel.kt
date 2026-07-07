@@ -31,6 +31,20 @@ class SettingsViewModel @Inject constructor(
         initialValue = ScannerPreferencesRepository.DEFAULT_SCANNER_HEIGHT,
     )
 
+    // Expose logo size as state
+    val logoSize = preferencesRepository.logoSizePercent.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Lazily,
+        initialValue = ScannerPreferencesRepository.DEFAULT_LOGO_SIZE,
+    )
+
+    // Expose label size as state
+    val labelSize = preferencesRepository.labelSizePercent.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Lazily,
+        initialValue = ScannerPreferencesRepository.DEFAULT_LABEL_SIZE,
+    )
+
     fun loadSettings() {
         // Settings are loaded automatically via Flow
     }
@@ -44,6 +58,18 @@ class SettingsViewModel @Inject constructor(
     fun updateScannerHeight(height: Float) {
         viewModelScope.launch {
             preferencesRepository.updateScannerHeight(height)
+        }
+    }
+
+    fun updateLogoSize(size: Float) {
+        viewModelScope.launch {
+            preferencesRepository.updateLogoSize(size)
+        }
+    }
+
+    fun updateLabelSize(size: Float) {
+        viewModelScope.launch {
+            preferencesRepository.updateLabelSize(size)
         }
     }
 
