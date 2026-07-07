@@ -73,15 +73,21 @@ fun ShoppingCartScreen(
     // UNIFIED Scanner Result Dialog - used for ALL scan types AND editing
     // Shows same layout whether price was detected or not, or when editing an item
     if (uiState.showScannerResultDialog) {
+        val scannerQuantity by viewModel.scannerDialogQuantity.collectAsState()
+
         ScannerResultDialog(
             detectedPrice = uiState.detectedPrice,
             detectedName = uiState.editingItemName,
             isEditMode = uiState.editingItemId != null,
             hasSelectedManualItem = selectedManualItemId != null,
+            quantityText = scannerQuantity,
+            onQuantityChange = { viewModel.setScannerDialogQuantity(it) },
             onConfirm = { price, name, quantity ->
                 viewModel.addItemFromScannerResult(price, name, quantity)
+                viewModel.resetScannerDialogQuantity()
             },
             onDismiss = {
+                viewModel.resetScannerDialogQuantity()
                 if (uiState.editingItemId != null) {
                     viewModel.cancelEditingItem()
                 } else {

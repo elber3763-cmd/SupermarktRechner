@@ -9,7 +9,7 @@ import com.einkaufsscanner.data.database.entities.ShoppingItemEntity
 
 @Database(
     entities = [ShoppingItemEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class ShoppingDatabase : RoomDatabase() {

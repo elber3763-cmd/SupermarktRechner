@@ -31,12 +31,13 @@ fun ScannerResultDialog(
     detectedName: String? = null,
     isEditMode: Boolean = false,
     hasSelectedManualItem: Boolean = false,
+    quantityText: String = "1",
+    onQuantityChange: (String) -> Unit = {},
     onConfirm: (price: Float, name: String, quantity: Int) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var priceText by remember { mutableStateOf(detectedPrice?.let { String.format("%.2f", it) } ?: "") }
-    var articleName by remember { mutableStateOf(detectedName ?: "") }
-    var quantityText by remember { mutableStateOf("1") }
+    var priceText by remember(detectedPrice) { mutableStateOf(detectedPrice?.let { String.format("%.2f", it) } ?: "") }
+    var articleName by remember(detectedName) { mutableStateOf(detectedName ?: "") }
 
     val parsedPrice = try {
         priceText.replace(",", ".").toFloatOrNull() ?: 0f
@@ -45,8 +46,12 @@ fun ScannerResultDialog(
     }
 
     val quantity = try {
-        quantityText.filter { it.isDigit() }.toIntOrNull() ?: 1
+        val filtered = quantityText.filter { it.isDigit() }
+        val parsed = filtered.toIntOrNull() ?: 1
+        android.util.Log.d("ScannerDialog", "quantityText='$quantityText', filtered='$filtered', quantity=$parsed")
+        parsed
     } catch (e: Exception) {
+        android.util.Log.e("ScannerDialog", "Quantity calculation error", e)
         1
     }
     val totalPrice = parsedPrice * quantity
@@ -109,15 +114,21 @@ fun ScannerResultDialog(
                 // ========== QUANTITY FIELD ==========
                 OutlinedTextField(
                     value = quantityText,
-                    onValueChange = { newValue ->
-                        quantityText = newValue.filter { it.isDigit() }
-                    },
+                    onValueChange = onQuantityChange,
                     label = { Text("Menge") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 8.dp),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
+
+                // DEBUG: Show current quantity value
+                Text(
+                    text = "Menge: '$quantityText' → Berechnet: $quantity",
+                    fontSize = 10.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
 
                 // ========== TOTAL ==========
@@ -149,30 +160,30 @@ fun ScannerResultDialog(
                 // ========== QUANTITY NUMPAD ==========
                 Column(modifier = Modifier.padding(vertical = 12.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuantityButton("1", Modifier.weight(1f)) { quantityText = "1" }
-                        QuantityButton("2", Modifier.weight(1f)) { quantityText = "2" }
-                        QuantityButton("3", Modifier.weight(1f)) { quantityText = "3" }
+                        QuantityButton("1", Modifier.weight(1f)) { onQuantityChange("1") }
+                        QuantityButton("2", Modifier.weight(1f)) { onQuantityChange("2") }
+                        QuantityButton("3", Modifier.weight(1f)) { onQuantityChange("3") }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuantityButton("4", Modifier.weight(1f)) { quantityText = "4" }
-                        QuantityButton("5", Modifier.weight(1f)) { quantityText = "5" }
-                        QuantityButton("6", Modifier.weight(1f)) { quantityText = "6" }
+                        QuantityButton("4", Modifier.weight(1f)) { onQuantityChange("4") }
+                        QuantityButton("5", Modifier.weight(1f)) { onQuantityChange("5") }
+                        QuantityButton("6", Modifier.weight(1f)) { onQuantityChange("6") }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuantityButton("7", Modifier.weight(1f)) { quantityText = "7" }
-                        QuantityButton("8", Modifier.weight(1f)) { quantityText = "8" }
-                        QuantityButton("9", Modifier.weight(1f)) { quantityText = "9" }
+                        QuantityButton("7", Modifier.weight(1f)) { onQuantityChange("7") }
+                        QuantityButton("8", Modifier.weight(1f)) { onQuantityChange("8") }
+                        QuantityButton("9", Modifier.weight(1f)) { onQuantityChange("9") }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        QuantityButton("C", Modifier.weight(1f)) { quantityText = "1" }
-                        QuantityButton("0", Modifier.weight(1f)) { quantityText = addQuantityDigit(quantityText, "0") }
-                        QuantityButton("⌫", Modifier.weight(1f)) { quantityText = quantityText.dropLast(1).takeIf { it.isNotEmpty() } ?: "1" }
+                        QuantityButton("C", Modifier.weight(1f)) { onQuantityChange("1") }
+                        QuantityButton("0", Modifier.weight(1f)) { onQuantityChange(addQuantityDigit(quantityText, "0")) }
+                        QuantityButton("⌫", Modifier.weight(1f)) { onQuantityChange(quantityText.dropLast(1).takeIf { it.isNotEmpty() } ?: "1") }
                     }
                 }
 
@@ -193,7 +204,9 @@ fun ScannerResultDialog(
 
                     Button(
                         onClick = {
-                            onConfirm(parsedPrice, articleName.trim(), quantity)
+                            val finalQuantity = quantityText.filter { it.isDigit() }.toIntOrNull() ?: 1
+                            android.util.Log.d("ScannerDialog", "FINAL: quantityText='$quantityText' → finalQuantity=$finalQuantity")
+                            onConfirm(parsedPrice, articleName.trim(), finalQuantity)
                         },
                         modifier = Modifier
                             .weight(1f)

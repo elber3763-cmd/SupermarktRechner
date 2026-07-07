@@ -245,7 +245,7 @@ class ShoppingViewModel @Inject constructor(
         when {
             selectedManualId != null -> {
                 // Add price to selected manual item
-                addPriceToManualItem(price)
+                addPriceToManualItem(price, quantity)
             }
             editingId != null -> {
                 // Update existing item
@@ -364,14 +364,25 @@ class ShoppingViewModel @Inject constructor(
     private val _selectedManualItemId = MutableStateFlow<Long?>(null)
     val selectedManualItemId = _selectedManualItemId.asStateFlow()
 
+    private val _scannerDialogQuantity = MutableStateFlow("1")
+    val scannerDialogQuantity = _scannerDialogQuantity.asStateFlow()
+
     fun selectManualItem(itemId: Long?) {
         _selectedManualItemId.value = itemId
     }
 
-    fun addPriceToManualItem(price: Float) {
+    fun setScannerDialogQuantity(quantity: String) {
+        _scannerDialogQuantity.value = quantity.filter { it.isDigit() }
+    }
+
+    fun resetScannerDialogQuantity() {
+        _scannerDialogQuantity.value = "1"
+    }
+
+    fun addPriceToManualItem(price: Float, quantity: Int = 1) {
         val selectedId = _selectedManualItemId.value ?: return
         viewModelScope.launch {
-            cartRepository.convertManualToScanned(selectedId, price)
+            cartRepository.convertManualToScanned(selectedId, price * quantity)
             _selectedManualItemId.value = null
             _uiState.value = _uiState.value.copy(
                 showScannerResultDialog = false,
