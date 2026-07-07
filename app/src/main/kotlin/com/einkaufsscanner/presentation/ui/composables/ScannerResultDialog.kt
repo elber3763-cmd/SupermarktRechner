@@ -103,30 +103,18 @@ fun ScannerResultDialog(
                 )
 
                 // ========== QUANTITY FIELD ==========
-                Surface(
+                OutlinedTextField(
+                    value = quantityText,
+                    onValueChange = { newValue ->
+                        quantityText = newValue.filter { it.isDigit() }.takeIf { it.isNotEmpty() } ?: "1"
+                    },
+                    label = { Text("Menge") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp)
-                        .padding(bottom = 8.dp)
-                        .background(Color(0xFFE3F2FD), RoundedCornerShape(8.dp)),
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFFE3F2FD)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Menge:", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                        Text(
-                            text = quantityText,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+                        .padding(bottom = 8.dp),
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                )
 
                 // ========== TOTAL ==========
                 Surface(
