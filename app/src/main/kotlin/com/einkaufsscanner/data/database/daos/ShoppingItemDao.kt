@@ -24,6 +24,12 @@ interface ShoppingItemDao {
     @Query("SELECT * FROM shopping_items ORDER BY timestamp DESC")
     fun getAllItems(): Flow<List<ShoppingItemEntity>>
 
+    @Query("SELECT * FROM shopping_items WHERE itemType = 'scanned' ORDER BY timestamp DESC")
+    fun getScannedItems(): Flow<List<ShoppingItemEntity>>
+
+    @Query("SELECT * FROM shopping_items WHERE itemType = 'manual' ORDER BY timestamp DESC")
+    fun getManualItems(): Flow<List<ShoppingItemEntity>>
+
     @Query("SELECT * FROM shopping_items WHERE id = :id")
     suspend fun getItemById(id: Long): ShoppingItemEntity?
 

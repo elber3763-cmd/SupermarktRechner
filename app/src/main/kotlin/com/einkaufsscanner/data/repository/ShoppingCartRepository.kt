@@ -16,7 +16,7 @@ class ShoppingCartRepository @Inject constructor(
 ) {
     private val dao = database.shoppingItemDao()
 
-    val cartFlow: Flow<ShoppingCart> = dao.getAllItems().map { items ->
+    val cartFlow: Flow<ShoppingCart> = dao.getScannedItems().map { items ->
         val cartItems = items.mapIndexed { index, entity ->
             CartItem(
                 id = entity.id,
@@ -29,9 +29,13 @@ class ShoppingCartRepository @Inject constructor(
 
     fun getAllItems(): Flow<List<ShoppingItemEntity>> = dao.getAllItems()
 
+    fun getManualItems(): Flow<List<ShoppingItemEntity>> = dao.getManualItems()
+
+    fun getScannedItems(): Flow<List<ShoppingItemEntity>> = dao.getScannedItems()
+
     suspend fun addItem(price: Float, name: String? = null) {
         val itemName = name?.takeIf { it.isNotBlank() } ?: "Artikel"
-        val entity = ShoppingItemEntity(name = itemName, price = price)
+        val entity = ShoppingItemEntity(name = itemName, price = price, itemType = "scanned")
         try {
             dao.insert(entity)
             Log.d("ShoppingCartRepository", "Added item: $itemName for $price€")
@@ -74,7 +78,8 @@ class ShoppingCartRepository @Inject constructor(
                 name = name,
                 price = price,
                 quantity = quantity,
-                isChecked = false
+                isChecked = false,
+                itemType = "manual"
             )
             dao.insert(entity)
             Log.d("ShoppingCartRepository", "Added manual item: $name")

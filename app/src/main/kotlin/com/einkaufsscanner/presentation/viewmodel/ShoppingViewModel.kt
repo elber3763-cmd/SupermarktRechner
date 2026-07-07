@@ -317,7 +317,13 @@ class ShoppingViewModel @Inject constructor(
     }
 
     // Manual Shopping List Functions
-    val cartItems = cartRepository.getAllItems().stateIn(
+    val cartItems = cartRepository.getManualItems().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Lazily,
+        initialValue = emptyList(),
+    )
+
+    val scannedItems = cartRepository.getScannedItems().stateIn(
         scope = viewModelScope,
         started = SharingStarted.Lazily,
         initialValue = emptyList(),

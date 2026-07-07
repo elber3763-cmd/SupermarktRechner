@@ -11,5 +11,11 @@ data class ShoppingItemEntity(
     val price: Float,
     val quantity: Int = 1,
     val isChecked: Boolean = false,
+    val itemType: String = "scanned", // "scanned" oder "manual"
     val timestamp: Long = System.currentTimeMillis()
 )
+
+enum class ItemType {
+    SCANNED,
+    MANUAL
+}
