@@ -77,6 +77,7 @@ fun ShoppingCartScreen(
             detectedPrice = uiState.detectedPrice,
             detectedName = uiState.editingItemName,
             isEditMode = uiState.editingItemId != null,
+            hasSelectedManualItem = selectedManualItemId != null,
             onConfirm = { price, name, quantity ->
                 viewModel.addItemFromScannerResult(price, name, quantity)
             },

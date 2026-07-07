@@ -30,6 +30,7 @@ fun ScannerResultDialog(
     detectedPrice: Float? = null,
     detectedName: String? = null,
     isEditMode: Boolean = false,
+    hasSelectedManualItem: Boolean = false,
     onConfirm: (price: Float, name: String, quantity: Int) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -45,7 +46,7 @@ fun ScannerResultDialog(
 
     val quantity = quantityText.toIntOrNull() ?: 1
     val totalPrice = parsedPrice * quantity
-    val isNameValid = articleName.isNotBlank()
+    val isNameValid = if (hasSelectedManualItem) true else articleName.isNotBlank()
     val isPriceValid = parsedPrice > 0f
 
     Dialog(onDismissRequest = onDismiss) {
@@ -63,25 +64,27 @@ fun ScannerResultDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    if (isEditMode) "Artikel bearbeiten" else "Artikel erfassen",
+                    if (isEditMode) "Artikel bearbeiten" else if (hasSelectedManualItem) "Preis erfassen" else "Artikel erfassen",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // ========== ARTICLE NAME FIELD (REQUIRED, ALWAYS VISIBLE) ==========
-                OutlinedTextField(
-                    value = articleName,
-                    onValueChange = { articleName = it },
-                    label = { Text("Artikelname *") },
-                    placeholder = { Text("z.B. Apfel, Bio-Milch, ...") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 12.dp),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                    isError = articleName.isNotEmpty() && !isNameValid
-                )
+                // ========== ARTICLE NAME FIELD (HIDDEN IF MANUAL ITEM SELECTED) ==========
+                if (!hasSelectedManualItem) {
+                    OutlinedTextField(
+                        value = articleName,
+                        onValueChange = { articleName = it },
+                        label = { Text("Artikelname *") },
+                        placeholder = { Text("z.B. Apfel, Bio-Milch, ...") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 12.dp),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                        isError = articleName.isNotEmpty() && !isNameValid
+                    )
+                }
 
                 // ========== PRICE FIELD (EDITABLE) ==========
                 OutlinedTextField(
