@@ -240,29 +240,37 @@ class ShoppingViewModel @Inject constructor(
 
     fun addItemFromScannerResult(price: Float, name: String, quantity: Int) {
         val editingId = _uiState.value.editingItemId
+        val selectedManualId = _selectedManualItemId.value
 
-        if (editingId != null) {
-            // Update existing item
-            val totalPrice = price * quantity
-            viewModelScope.launch {
-                cartRepository.updateItem(editingId, totalPrice, name)
+        when {
+            selectedManualId != null -> {
+                // Add price to selected manual item
+                addPriceToManualItem(price)
+            }
+            editingId != null -> {
+                // Update existing item
+                val totalPrice = price * quantity
+                viewModelScope.launch {
+                    cartRepository.updateItem(editingId, totalPrice, name)
+                    _uiState.value = _uiState.value.copy(
+                        showScannerResultDialog = false,
+                        detectedPrice = null,
+                        editingItemId = null,
+                        editingItemName = null,
+                        isCameraActive = false
+                    )
+                }
+            }
+            else -> {
+                // Add new item
+                val totalPrice = price * quantity
+                addItem(totalPrice, name)
                 _uiState.value = _uiState.value.copy(
                     showScannerResultDialog = false,
                     detectedPrice = null,
-                    editingItemId = null,
-                    editingItemName = null,
                     isCameraActive = false
                 )
             }
-        } else {
-            // Add new item
-            val totalPrice = price * quantity
-            addItem(totalPrice, name)
-            _uiState.value = _uiState.value.copy(
-                showScannerResultDialog = false,
-                detectedPrice = null,
-                isCameraActive = false
-            )
         }
     }
 
@@ -350,6 +358,26 @@ class ShoppingViewModel @Inject constructor(
     fun deleteItem(id: Long) {
         viewModelScope.launch {
             cartRepository.deleteShoppingItem(id)
+        }
+    }
+
+    private val _selectedManualItemId = MutableStateFlow<Long?>(null)
+    val selectedManualItemId = _selectedManualItemId.asStateFlow()
+
+    fun selectManualItem(itemId: Long?) {
+        _selectedManualItemId.value = itemId
+    }
+
+    fun addPriceToManualItem(price: Float) {
+        val selectedId = _selectedManualItemId.value ?: return
+        viewModelScope.launch {
+            cartRepository.convertManualToScanned(selectedId, price)
+            _selectedManualItemId.value = null
+            _uiState.value = _uiState.value.copy(
+                showScannerResultDialog = false,
+                detectedPrice = null,
+                isCameraActive = false
+            )
         }
     }
 

@@ -114,4 +114,20 @@ class ShoppingCartRepository @Inject constructor(
             Log.e("ShoppingCartRepository", "Error deleting shopping item", e)
         }
     }
+
+    suspend fun convertManualToScanned(manualItemId: Long, price: Float) {
+        try {
+            val item = dao.getItemById(manualItemId)
+            if (item != null) {
+                val updatedItem = item.copy(
+                    price = price,
+                    itemType = "scanned"
+                )
+                dao.update(updatedItem)
+                Log.d("ShoppingCartRepository", "Converted manual item $manualItemId to scanned with price $price€")
+            }
+        } catch (e: Exception) {
+            Log.e("ShoppingCartRepository", "Error converting manual item to scanned", e)
+        }
+    }
 }

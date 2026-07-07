@@ -56,6 +56,8 @@ fun ShoppingCartScreen(
     val scannerHeight by viewModel.scannerHeightPercent.collectAsState()
     val logoSize by viewModel.logoSizePercent.collectAsState()
     val labelSize by viewModel.labelSizePercent.collectAsState()
+    val manualItems by viewModel.cartItems.collectAsState()
+    val selectedManualItemId by viewModel.selectedManualItemId.collectAsState()
     val isCameraActive = uiState.isCameraActive
     var selectedTab by remember { mutableStateOf(0) } // 0 = Scanner, 1 = Shopping List
 
@@ -461,13 +463,104 @@ fun ShoppingCartScreen(
                     }
                 }
 
-                // Shopping Cart List - Dynamic with weight(1f) to fill remaining space
-                CartListSection(
-                    items = uiState.items,
-                    onRemoveItem = { viewModel.removeItem(it) },
-                    onEditItem = { viewModel.startEditingItem(it) },
-                    modifier = Modifier.weight(1f),
-                )
+                // Manual Items List for Selection - Dynamic with weight(1f)
+                if (manualItems.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .background(Color(0xFFF5F5F5)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "Keine Artikel in der Einkaufsliste.\nFüge Artikel im 'Einkaufsliste'-Tab hinzu.",
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            color = Color.Gray,
+                            fontSize = 13.sp
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        items(manualItems) { item ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(56.dp)
+                                    .clickable { viewModel.selectManualItem(if (selectedManualItemId == item.id) null else item.id) }
+                                    .background(
+                                        if (selectedManualItemId == item.id) Color(0xFFE3F2FD) else Color(0xFFF5F5F5)
+                                    ),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (selectedManualItemId == item.id) Color(0xFFE3F2FD) else Color(0xFFF5F5F5)
+                                ),
+                                elevation = CardDefaults.cardElevation(
+                                    defaultElevation = if (selectedManualItemId == item.id) 4.dp else 1.dp
+                                ),
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                ) {
+                                    Checkbox(
+                                        checked = selectedManualItemId == item.id,
+                                        onCheckedChange = { checked ->
+                                            viewModel.selectManualItem(if (checked) item.id else null)
+                                        },
+                                        modifier = Modifier.size(24.dp)
+                                    )
+
+                                    Text(
+                                        text = item.name,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(start = 8.dp),
+                                        color = if (selectedManualItemId == item.id) Color(0xFF1976D2) else Color.Black
+                                    )
+
+                                    if (selectedManualItemId == item.id) {
+                                        Text(
+                                            text = "→ Ready",
+                                            fontSize = 11.sp,
+                                            color = Color(0xFF4CAF50),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Scanned items list
+                if (uiState.items.isNotEmpty()) {
+                    Divider(modifier = Modifier.padding(horizontal = 8.dp))
+                    Text(
+                        "Gescannte Artikel",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                    )
+                    CartListSection(
+                        items = uiState.items,
+                        onRemoveItem = { viewModel.removeItem(it) },
+                        onEditItem = { viewModel.startEditingItem(it) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 150.dp),
+                    )
+                }
             }
 
             // Bottom Action Bar - Fixed height, always visible at bottom (only in Scanner tab)
