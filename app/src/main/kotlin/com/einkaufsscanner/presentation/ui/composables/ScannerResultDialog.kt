@@ -106,7 +106,8 @@ fun ScannerResultDialog(
                 OutlinedTextField(
                     value = quantityText,
                     onValueChange = { newValue ->
-                        quantityText = newValue.filter { it.isDigit() }.takeIf { it.isNotEmpty() } ?: "1"
+                        val filtered = newValue.filter { it.isDigit() }
+                        quantityText = if (filtered.isNotEmpty()) filtered else "1"
                     },
                     label = { Text("Menge") },
                     modifier = Modifier
