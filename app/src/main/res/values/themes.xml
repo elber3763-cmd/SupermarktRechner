@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.EinkaufsScanner" parent="android:Theme.Material.Light">
-        <item name="android:colorPrimary">@color/teal_primary</item>
-        <item name="android:colorPrimaryDark">@color/teal_dark</item>
-        <item name="android:colorAccent">@color/teal_accent</item>
+    <style name="Theme.EinkaufsScanner" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/teal_primary</item>
+        <item name="colorPrimaryVariant">@color/teal_dark</item>
+        <item name="colorAccent">@color/teal_accent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowFullscreen">false</item>
+        <item name="android:fitsSystemWindows">false</item>
     </style>
 
     <color name="teal_primary">#009688</color>
