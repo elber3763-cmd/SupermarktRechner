@@ -44,7 +44,11 @@ fun ScannerResultDialog(
         0f
     }
 
-    val quantity = quantityText.toIntOrNull() ?: 1
+    val quantity = try {
+        quantityText.filter { it.isDigit() }.toIntOrNull() ?: 1
+    } catch (e: Exception) {
+        1
+    }
     val totalPrice = parsedPrice * quantity
     val isNameValid = if (hasSelectedManualItem) true else articleName.isNotBlank()
     val isPriceValid = parsedPrice > 0f
@@ -106,8 +110,7 @@ fun ScannerResultDialog(
                 OutlinedTextField(
                     value = quantityText,
                     onValueChange = { newValue ->
-                        val filtered = newValue.filter { it.isDigit() }
-                        quantityText = if (filtered.isNotEmpty()) filtered else "1"
+                        quantityText = newValue.filter { it.isDigit() }
                     },
                     label = { Text("Menge") },
                     modifier = Modifier
