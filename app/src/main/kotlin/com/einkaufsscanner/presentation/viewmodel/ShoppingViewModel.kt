@@ -316,4 +316,35 @@ class ShoppingViewModel @Inject constructor(
         return String.format("%.2f EUR", value).replace(".", ",")
     }
 
+    // Manual Shopping List Functions
+    val cartItems = cartRepository.getAllItems().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Lazily,
+        initialValue = emptyList(),
+    )
+
+    fun addManualItem(name: String, price: Float, quantity: Int) {
+        viewModelScope.launch {
+            cartRepository.addManualItem(name, price, quantity)
+        }
+    }
+
+    fun updateItem(item: com.einkaufsscanner.data.database.entities.ShoppingItemEntity) {
+        viewModelScope.launch {
+            cartRepository.updateManualItem(item)
+        }
+    }
+
+    fun updateItemCheckedStatus(id: Long, isChecked: Boolean) {
+        viewModelScope.launch {
+            cartRepository.updateItemCheckedStatus(id, isChecked)
+        }
+    }
+
+    fun deleteItem(id: Long) {
+        viewModelScope.launch {
+            cartRepository.deleteShoppingItem(id)
+        }
+    }
+
 }

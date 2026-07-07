@@ -57,6 +57,7 @@ fun ShoppingCartScreen(
     val logoSize by viewModel.logoSizePercent.collectAsState()
     val labelSize by viewModel.labelSizePercent.collectAsState()
     val isCameraActive = uiState.isCameraActive
+    var selectedTab by remember { mutableStateOf(0) } // 0 = Scanner, 1 = Shopping List
 
     // Auto-shutdown camera when inactive to save battery and free resources
     LaunchedEffect(isCameraActive) {
@@ -342,6 +343,27 @@ fun ShoppingCartScreen(
             ),
         )
 
+        // Tab Navigation
+        TabRow(
+            selectedTabIndex = selectedTab,
+            modifier = Modifier.fillMaxWidth(),
+            containerColor = Color(0xFF00897B),
+            contentColor = Color.White,
+        ) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                text = { Text("Scanner", fontSize = 13.sp) },
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                text = { Text("Einkaufsliste", fontSize = 13.sp) },
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
+
         // Clear Cart Confirmation Dialog
         if (uiState.showClearCartConfirmation) {
             AlertDialog(
@@ -367,101 +389,110 @@ fun ShoppingCartScreen(
             )
         }
 
-        // Camera Preview Area - Dynamic height with weight(0.5f) to avoid pushing buttons off screen
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.5f)
-                .background(Color.Black),
-        ) {
-            if (isCameraActive) {
-                CameraPreviewArea(
-                    cameraManager = cameraManager,
-                    onScanPrice = onScanPrice,
-                    scannerWidthPercent = scannerWidth,
-                    scannerHeightPercent = scannerHeight,
-                )
-            } else {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Spacer(modifier = Modifier.height(40.dp))
-                    Icon(Icons.Default.Camera, contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(48.dp))
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        "Kamera ist aus.\nTippe auf 'Preis scannen', um sie zu starten.",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 14.sp,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
-                    // Handwriting optimization hint
-                    Text(
-                        "💡 Hinweis: Bitte Preise groß und in Blockschrift scannen.",
-                        color = Color(0xFFFFD700),
-                        fontSize = 12.sp,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
-                    )
-                }
-            }
-
-            // Close Button (Top Right) - Outside camera feed, positioned in corner
-            if (isCameraActive) {
-                Surface(
+        // Content based on selected tab
+        if (selectedTab == 0) {
+            // Scanner Tab
+            Column(modifier = Modifier.weight(1f)) {
+                // Camera Preview Area - Dynamic height with weight(0.5f) to avoid pushing buttons off screen
+                Box(
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .clickable { viewModel.deactivateCamera() },
-                    shape = CircleShape,
-                    color = Color.Black.copy(alpha = 0.4f),
-                    shadowElevation = 4.dp
+                        .fillMaxWidth()
+                        .weight(0.5f)
+                        .background(Color.Black),
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Close,
-                            contentDescription = "Kamera schließen",
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                    if (isCameraActive) {
+                        CameraPreviewArea(
+                            cameraManager = cameraManager,
+                            onScanPrice = onScanPrice,
+                            scannerWidthPercent = scannerWidth,
+                            scannerHeightPercent = scannerHeight,
                         )
+                    } else {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Spacer(modifier = Modifier.height(40.dp))
+                            Icon(Icons.Default.Camera, contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(48.dp))
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                "Kamera ist aus.\nTippe auf 'Preis scannen', um sie zu starten.",
+                                color = Color.White.copy(alpha = 0.7f),
+                                fontSize = 14.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            // Handwriting optimization hint
+                            Text(
+                                "💡 Hinweis: Bitte Preise groß und in Blockschrift scannen.",
+                                color = Color(0xFFFFD700),
+                                fontSize = 12.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
+                            )
+                        }
+                    }
+
+                    // Close Button (Top Right) - Outside camera feed, positioned in corner
+                    if (isCameraActive) {
+                        Surface(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(16.dp)
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .clickable { viewModel.deactivateCamera() },
+                            shape = CircleShape,
+                            color = Color.Black.copy(alpha = 0.4f),
+                            shadowElevation = 4.dp
+                        ) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = "Kamera schließen",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
                     }
                 }
+
+                // Shopping Cart List - Dynamic with weight(1f) to fill remaining space
+                CartListSection(
+                    items = uiState.items,
+                    onRemoveItem = { viewModel.removeItem(it) },
+                    onEditItem = { viewModel.startEditingItem(it) },
+                    modifier = Modifier.weight(1f),
+                )
             }
+
+            // Bottom Action Bar - Fixed height, always visible at bottom (only in Scanner tab)
+            BottomActionBar(
+                total = uiState.total,
+                viewModel = viewModel,
+                onScanPrice = {
+                    if (!isCameraActive) {
+                        viewModel.activateCamera()
+                    } else {
+                        onScanPrice()
+                    }
+                },
+                onManualEntry = {
+                    viewModel.openManualInputDialog()
+                },
+                isLoading = uiState.isLoading,
+                isCameraActive = isCameraActive,
+                cameraManager = cameraManager,
+                modifier = Modifier.fillMaxWidth()
+            )
+        } else {
+            // Shopping List Tab
+            ManualShoppingListScreen(viewModel = viewModel)
         }
-
-        // Shopping Cart List - Dynamic with weight(1f) to fill remaining space
-        CartListSection(
-            items = uiState.items,
-            onRemoveItem = { viewModel.removeItem(it) },
-            onEditItem = { viewModel.startEditingItem(it) },
-            modifier = Modifier.weight(1f),
-        )
-
-        // Bottom Action Bar - Fixed height, always visible at bottom
-        BottomActionBar(
-            total = uiState.total,
-            viewModel = viewModel,
-            onScanPrice = {
-                if (!isCameraActive) {
-                    viewModel.activateCamera()
-                } else {
-                    onScanPrice()
-                }
-            },
-            onManualEntry = {
-                viewModel.openManualInputDialog()
-            },
-            isLoading = uiState.isLoading,
-            isCameraActive = isCameraActive,
-            cameraManager = cameraManager,
-            modifier = Modifier.fillMaxWidth()
-        )
 
         // Show loading indicator
         if (uiState.isLoading) {

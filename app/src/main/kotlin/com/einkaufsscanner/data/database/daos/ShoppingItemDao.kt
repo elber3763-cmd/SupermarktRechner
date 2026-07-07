@@ -32,4 +32,7 @@ interface ShoppingItemDao {
 
     @Query("SELECT COUNT(*) FROM shopping_items")
     fun getItemCount(): Flow<Int>
+
+    @Query("UPDATE shopping_items SET isChecked = :isChecked WHERE id = :id")
+    suspend fun updateCheckedStatus(id: Long, isChecked: Boolean)
 }

@@ -47,6 +47,17 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
     }
+
+    // Prevent compression of TFLite models
+    packagingOptions {
+        resources {
+            excludes += "DebugProbesKt.bin"
+        }
+    }
+
+    aaptOptions {
+        noCompress("tflite")
+    }
 }
 
 dependencies {

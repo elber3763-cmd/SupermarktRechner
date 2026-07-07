@@ -9,7 +9,7 @@ import com.einkaufsscanner.data.database.entities.ShoppingItemEntity
 
 @Database(
     entities = [ShoppingItemEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class ShoppingDatabase : RoomDatabase() {
@@ -25,7 +25,9 @@ abstract class ShoppingDatabase : RoomDatabase() {
                     context.applicationContext,
                     ShoppingDatabase::class.java,
                     "shopping_database"
-                ).build()
+                )
+                .fallbackToDestructiveMigration()
+                .build()
                 INSTANCE = instance
                 instance
             }

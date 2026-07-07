@@ -27,6 +27,8 @@ class ShoppingCartRepository @Inject constructor(
         ShoppingCart(items = cartItems)
     }
 
+    fun getAllItems(): Flow<List<ShoppingItemEntity>> = dao.getAllItems()
+
     suspend fun addItem(price: Float, name: String? = null) {
         val itemName = name?.takeIf { it.isNotBlank() } ?: "Artikel"
         val entity = ShoppingItemEntity(name = itemName, price = price)
@@ -63,6 +65,48 @@ class ShoppingCartRepository @Inject constructor(
             Log.d("ShoppingCartRepository", "Updated item: id=$id, name=$name, price=$price€")
         } catch (e: Exception) {
             Log.e("ShoppingCartRepository", "Error updating item", e)
+        }
+    }
+
+    suspend fun addManualItem(name: String, price: Float = 0f, quantity: Int = 1) {
+        try {
+            val entity = ShoppingItemEntity(
+                name = name,
+                price = price,
+                quantity = quantity,
+                isChecked = false
+            )
+            dao.insert(entity)
+            Log.d("ShoppingCartRepository", "Added manual item: $name")
+        } catch (e: Exception) {
+            Log.e("ShoppingCartRepository", "Error adding manual item", e)
+        }
+    }
+
+    suspend fun updateManualItem(item: ShoppingItemEntity) {
+        try {
+            dao.update(item)
+            Log.d("ShoppingCartRepository", "Updated manual item: ${item.name}")
+        } catch (e: Exception) {
+            Log.e("ShoppingCartRepository", "Error updating manual item", e)
+        }
+    }
+
+    suspend fun updateItemCheckedStatus(id: Long, isChecked: Boolean) {
+        try {
+            dao.updateCheckedStatus(id, isChecked)
+            Log.d("ShoppingCartRepository", "Updated checked status for item $id: $isChecked")
+        } catch (e: Exception) {
+            Log.e("ShoppingCartRepository", "Error updating checked status", e)
+        }
+    }
+
+    suspend fun deleteShoppingItem(id: Long) {
+        try {
+            dao.deleteById(id)
+            Log.d("ShoppingCartRepository", "Deleted shopping item with id: $id")
+        } catch (e: Exception) {
+            Log.e("ShoppingCartRepository", "Error deleting shopping item", e)
         }
     }
 }
