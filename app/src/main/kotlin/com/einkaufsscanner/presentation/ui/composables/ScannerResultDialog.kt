@@ -55,7 +55,6 @@ fun ScannerResultDialog(
         1
     }
     val totalPrice = parsedPrice * quantity
-    val isNameValid = if (hasSelectedManualItem) true else articleName.isNotBlank()
     val isPriceValid = parsedPrice > 0f
 
     Dialog(onDismissRequest = onDismiss) {
@@ -73,27 +72,11 @@ fun ScannerResultDialog(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    if (isEditMode) "Artikel bearbeiten" else if (hasSelectedManualItem) "Preis erfassen" else "Artikel erfassen",
+                    if (isEditMode) "Artikel bearbeiten" else if (hasSelectedManualItem) "Preis erfassen" else "Preis bestätigen",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
-
-                // ========== ARTICLE NAME FIELD (HIDDEN IF MANUAL ITEM SELECTED) ==========
-                if (!hasSelectedManualItem) {
-                    OutlinedTextField(
-                        value = articleName,
-                        onValueChange = { articleName = it },
-                        label = { Text("Artikelname *") },
-                        placeholder = { Text("z.B. Apfel, Bio-Milch, ...") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 12.dp),
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                        isError = articleName.isNotEmpty() && !isNameValid
-                    )
-                }
 
                 // ========== PRICE FIELD (EDITABLE) ==========
                 OutlinedTextField(
@@ -206,12 +189,14 @@ fun ScannerResultDialog(
                         onClick = {
                             val finalQuantity = quantityText.filter { it.isDigit() }.toIntOrNull() ?: 1
                             android.util.Log.d("ScannerDialog", "FINAL: quantityText='$quantityText' → finalQuantity=$finalQuantity")
-                            onConfirm(parsedPrice, articleName.trim(), finalQuantity)
+                            // Use articleName if not empty, otherwise default to "Artikel"
+                            val nameToSave = articleName.ifBlank { "Artikel" }
+                            onConfirm(parsedPrice, nameToSave.trim(), finalQuantity)
                         },
                         modifier = Modifier
                             .weight(1f)
                             .height(48.dp),
-                        enabled = isNameValid && isPriceValid,
+                        enabled = isPriceValid,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFF4CAF50),
                             disabledContainerColor = Color(0xFFCCCCCC)
@@ -219,7 +204,7 @@ fun ScannerResultDialog(
                     ) {
                         Text(
                             "OK",
-                            color = if (isNameValid && isPriceValid) Color.White else Color.Gray,
+                            color = if (isPriceValid) Color.White else Color.Gray,
                             fontWeight = FontWeight.Bold
                         )
                     }

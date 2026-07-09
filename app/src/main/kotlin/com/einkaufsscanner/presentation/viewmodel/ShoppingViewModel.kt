@@ -240,12 +240,22 @@ class ShoppingViewModel @Inject constructor(
 
     fun addItemFromScannerResult(price: Float, name: String, quantity: Int) {
         val editingId = _uiState.value.editingItemId
-        val selectedManualId = _selectedManualItemId.value
+        var selectedManualId = _selectedManualItemId.value
+
+        // SMART ASSIGN: If no item is selected, but there is exactly ONE item in the list
+        // that doesn't have a price yet, use that one!
+        if (selectedManualId == null && editingId == null) {
+            val itemsWithoutPrice = allItems.value.filter { it.price <= 0f }
+            if (itemsWithoutPrice.size == 1) {
+                selectedManualId = itemsWithoutPrice[0].id
+                Log.d("ShoppingViewModel", "Smart Assign: Automatically selected item '${itemsWithoutPrice[0].name}'")
+            }
+        }
 
         when {
             selectedManualId != null -> {
                 // Add price to selected manual item
-                addPriceToManualItem(price, quantity)
+                addPriceToManualItem(price, quantity, selectedManualId)
             }
             editingId != null -> {
                 // Update existing item
@@ -285,6 +295,10 @@ class ShoppingViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isCameraActive = false)
     }
 
+    fun setLoading(loading: Boolean) {
+        _uiState.value = _uiState.value.copy(isLoading = loading)
+    }
+
     /**
      * NEW: Process recognized text directly from native camera ML Kit analysis
      * No bitmap manipulation, pure text extraction
@@ -293,9 +307,14 @@ class ShoppingViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 Log.d("ShoppingViewModel", "Native ML Kit text: '$recognizedText'")
-
+                
                 if (recognizedText.isEmpty()) {
                     Log.d("ShoppingViewModel", "No text recognized in this frame")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Kein Text erkannt. Bitte erneut versuchen.",
+                        isCameraActive = true // Keep camera active for retry
+                    )
                     return@launch
                 }
 
@@ -304,18 +323,22 @@ class ShoppingViewModel @Inject constructor(
 
                 Log.d("ShoppingViewModel", "Extracted price: ${priceResult.price}€")
 
-                // Only show dialog if a price was found (price is nullable Float?)
+                // ALWAYS show dialog if text was recognized, so user can edit/confirm
+                // If price is null/0, user can enter it manually in the dialog
                 val detectedPrice = priceResult.price ?: 0f
-                if (detectedPrice > 0f) {
-                    _uiState.value = _uiState.value.copy(
-                        detectedPrice = detectedPrice,
-                        showScannerResultDialog = true,
-                        lastRecognizedText = recognizedText,
-                        isCameraActive = false
-                    )
-                }
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    detectedPrice = if (detectedPrice > 0f) detectedPrice else null,
+                    showScannerResultDialog = true,
+                    lastRecognizedText = recognizedText,
+                    isCameraActive = false
+                )
             } catch (e: Exception) {
                 Log.e("ShoppingViewModel", "Error processing recognized text", e)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Fehler bei der Texterkennung"
+                )
             }
         }
     }
@@ -325,6 +348,12 @@ class ShoppingViewModel @Inject constructor(
     }
 
     // Manual Shopping List Functions
+    val allItems = cartRepository.getAllItems().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Lazily,
+        initialValue = emptyList(),
+    )
+
     val cartItems = cartRepository.getManualItems().stateIn(
         scope = viewModelScope,
         started = SharingStarted.Lazily,
@@ -379,11 +408,13 @@ class ShoppingViewModel @Inject constructor(
         _scannerDialogQuantity.value = "1"
     }
 
-    fun addPriceToManualItem(price: Float, quantity: Int = 1) {
-        val selectedId = _selectedManualItemId.value ?: return
+    fun addPriceToManualItem(price: Float, quantity: Int = 1, itemId: Long? = null) {
+        val targetId = itemId ?: _selectedManualItemId.value ?: return
         viewModelScope.launch {
-            cartRepository.convertManualToScanned(selectedId, price * quantity)
-            _selectedManualItemId.value = null
+            cartRepository.convertManualToScanned(targetId, price * quantity)
+            if (itemId == null || itemId == _selectedManualItemId.value) {
+                _selectedManualItemId.value = null
+            }
             _uiState.value = _uiState.value.copy(
                 showScannerResultDialog = false,
                 detectedPrice = null,

@@ -59,7 +59,7 @@ fun ShoppingCartScreen(
     val scannerHeight by viewModel.scannerHeightPercent.collectAsState()
     val logoSize by viewModel.logoSizePercent.collectAsState()
     val labelSize by viewModel.labelSizePercent.collectAsState()
-    val manualItems by viewModel.cartItems.collectAsState()
+    val allItems by viewModel.allItems.collectAsState()
     val selectedManualItemId by viewModel.selectedManualItemId.collectAsState()
     val isCameraActive = uiState.isCameraActive
     var showAddDialog by remember { mutableStateOf(false) }
@@ -407,49 +407,24 @@ fun ShoppingCartScreen(
             )
         }
 
-        // Unified Screen Layout: Camera on top, Shopping List below
+        // Unified Screen Layout: Camera on top (only if active), Shopping List below
         Column(modifier = Modifier.weight(1f)) {
-            // Camera Preview Area - Fixed height (320.dp)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(320.dp)
-                    .background(Color.Black),
-            ) {
-                if (isCameraActive) {
+            // Camera Preview Area - Only visible if camera is active
+            if (isCameraActive) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(320.dp)
+                        .background(Color.Black),
+                ) {
                     CameraPreviewArea(
                         cameraManager = cameraManager,
                         onScanPrice = onScanPrice,
                         scannerWidthPercent = scannerWidth,
                         scannerHeightPercent = scannerHeight,
                     )
-                } else {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Spacer(modifier = Modifier.height(40.dp))
-                        Icon(Icons.Default.Camera, contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(48.dp))
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            "Kamera ist aus.\nTippe auf 'Preis scannen', um sie zu starten.",
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 14.sp,
-                            textAlign = TextAlign.Center
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text(
-                            "💡 Hinweis: Bitte Preise groß und in Blockschrift scannen.",
-                            color = Color(0xFFFFD700),
-                            fontSize = 12.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
-                        )
-                    }
-                }
 
-                // Close Button (Top Right)
-                if (isCameraActive) {
+                    // Close Button (Top Right)
                     Surface(
                         modifier = Modifier
                             .align(Alignment.TopEnd)
@@ -484,7 +459,7 @@ fun ShoppingCartScreen(
                     .background(Color.White)
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    if (manualItems.isEmpty()) {
+                    if (allItems.isEmpty()) {
                         Box(
                             modifier = Modifier
                                 .weight(1f)
@@ -506,9 +481,17 @@ fun ShoppingCartScreen(
                                 .padding(8.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            items(manualItems) { item ->
+                            items(allItems) { item ->
                                 ShoppingItemRow(
                                     item = item,
+                                    isSelected = item.id == selectedManualItemId,
+                                    onSelect = {
+                                        if (selectedManualItemId == item.id) {
+                                            viewModel.selectManualItem(null)
+                                        } else {
+                                            viewModel.selectManualItem(item.id)
+                                        }
+                                    },
                                     onCheckChange = { isChecked ->
                                         viewModel.updateItemCheckedStatus(item.id, isChecked)
                                     },
@@ -538,13 +521,7 @@ fun ShoppingCartScreen(
         BottomActionBar(
             total = uiState.total,
             viewModel = viewModel,
-            onScanPrice = {
-                if (!isCameraActive) {
-                    viewModel.activateCamera()
-                } else {
-                    onScanPrice()
-                }
-            },
+            onScanPrice = onScanPrice, // This will call viewModel.activateCamera() as set in MainActivity
             onManualEntry = {
                 viewModel.openManualInputDialog()
             },
@@ -652,88 +629,7 @@ fun ROIOverlay(
     }
 }
 
-@Composable
-fun CartListSection(
-    items: List<CartItem>,
-    onRemoveItem: (Long) -> Unit,
-    onEditItem: (CartItem) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    LazyColumn(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        items(items) { item ->
-            CartItemRow(
-                item = item,
-                onEdit = { onEditItem(item) },
-                onRemove = { onRemoveItem(item.id) },
-            )
-        }
-    }
-}
 
-@Composable
-fun CartItemRow(
-    item: CartItem,
-    onEdit: () -> Unit,
-    onRemove: () -> Unit,
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(60.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = item.name,
-                fontSize = 14.sp,
-                modifier = Modifier.weight(1f),
-            )
-
-            Text(
-                text = String.format("%.2f EUR", item.price),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(end = 8.dp),
-            )
-
-            // Edit Button
-            IconButton(
-                onClick = onEdit,
-                modifier = Modifier.size(24.dp),
-            ) {
-                Icon(
-                    Icons.Default.Edit,
-                    contentDescription = "Bearbeiten",
-                    tint = Color(0xFF1976D2),
-                )
-            }
-
-            // Delete Button
-            IconButton(
-                onClick = onRemove,
-                modifier = Modifier.size(24.dp),
-            ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Löschen",
-                    tint = Color(0xFFE53935),
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun BottomActionBar(
@@ -790,6 +686,7 @@ fun BottomActionBar(
                     onClick = {
                         if (isCameraActive && cameraManager != null) {
                             Log.d("BottomActionBar", "📷 Scan button clicked - calling takePhoto()")
+                            viewModel.setLoading(true) // Trigger loading state for feedback
                             cameraManager.takePhoto()
                         } else {
                             onScanPrice()
@@ -848,129 +745,4 @@ fun PriceSelectionDialog(
     )
 }
 
-@Composable
-fun ShoppingItemRow(
-    item: com.einkaufsscanner.data.database.entities.ShoppingItemEntity,
-    onCheckChange: (Boolean) -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(72.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Checkbox(
-                checked = item.isChecked,
-                onCheckedChange = onCheckChange,
-                modifier = Modifier.size(24.dp)
-            )
 
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 8.dp)
-            ) {
-                Text(
-                    text = item.name,
-                    fontSize = 14.sp,
-                    textDecoration = if (item.isChecked) TextDecoration.LineThrough else TextDecoration.None,
-                    color = if (item.isChecked) Color.Gray else Color.Black,
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (item.price > 0f) {
-                        Text(
-                            text = String.format("%.2f EUR", item.price),
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                        )
-                    }
-                    if (item.quantity > 1) {
-                        Text(
-                            text = "× ${item.quantity}",
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                        )
-                    }
-                }
-            }
-
-            IconButton(
-                onClick = onEdit,
-                modifier = Modifier.size(32.dp),
-            ) {
-                Icon(
-                    Icons.Default.Edit,
-                    contentDescription = "Bearbeiten",
-                    tint = Color(0xFF1976D2),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.size(32.dp),
-            ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Löschen",
-                    tint = Color(0xFFE53935),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun AddItemDialog(
-    item: com.einkaufsscanner.data.database.entities.ShoppingItemEntity? = null,
-    onSave: (String, Float, Int) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var name by remember { mutableStateOf(item?.name ?: "") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(if (item == null) "Neuen Artikel hinzufügen" else "Artikel bearbeiten")
-        },
-        text = {
-            TextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Artikel-Name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (name.isNotBlank()) {
-                        onSave(name, 0f, 1)
-                    }
-                }
-            ) {
-                Text("Speichern")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Abbrechen")
-            }
-        }
-    )
-}

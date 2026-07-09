@@ -316,15 +316,14 @@ class CameraManager(
                         val recognizedText = visionText.text
                         Log.d("CameraAnalyzer", "OCR recognized: '$recognizedText'")
 
-                        // Call the NEW callback with recognized text
-                        val listener = onTextRecognized
-                        if (listener != null && recognizedText.isNotEmpty()) {
-                            Log.d("CameraAnalyzer", "Text callback invoked with: '$recognizedText'")
-                            listener(recognizedText)
-                        }
+                        // Call the callback with recognized text (even if empty)
+                        // This ensures the ViewModel can reset loading state
+                        onTextRecognized?.invoke(recognizedText)
                     }
                     .addOnFailureListener { exception ->
                         Log.e("CameraAnalyzer", "ML Kit OCR failed", exception)
+                        // Even on failure, we should notify the listener to stop loading
+                        onTextRecognized?.invoke("")
                     }
             } else {
                 Log.w("CameraAnalyzer", "MediaImage is null!")

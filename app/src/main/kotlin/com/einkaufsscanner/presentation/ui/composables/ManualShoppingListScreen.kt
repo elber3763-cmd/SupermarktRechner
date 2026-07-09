@@ -27,6 +27,7 @@ fun ManualShoppingListScreen(
     viewModel: ShoppingViewModel = hiltViewModel(),
 ) {
     val items by viewModel.cartItems.collectAsState(initial = emptyList())
+    val selectedManualItemId by viewModel.selectedManualItemId.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var editingItem by remember { mutableStateOf<ShoppingItemEntity?>(null) }
 
@@ -86,6 +87,14 @@ fun ManualShoppingListScreen(
                     items(items) { item ->
                         ShoppingItemRow(
                             item = item,
+                            isSelected = item.id == selectedManualItemId,
+                            onSelect = {
+                                if (selectedManualItemId == item.id) {
+                                    viewModel.selectManualItem(null)
+                                } else {
+                                    viewModel.selectManualItem(item.id)
+                                }
+                            },
                             onCheckChange = { isChecked ->
                                 viewModel.updateItemCheckedStatus(item.id, isChecked)
                             },
@@ -111,133 +120,4 @@ fun ManualShoppingListScreen(
     }
 }
 
-@Composable
-fun ShoppingItemRow(
-    item: ShoppingItemEntity,
-    onCheckChange: (Boolean) -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(72.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            // Checkbox
-            Checkbox(
-                checked = item.isChecked,
-                onCheckedChange = onCheckChange,
-                modifier = Modifier.size(24.dp)
-            )
 
-            // Article name with strikethrough if checked
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 8.dp)
-            ) {
-                Text(
-                    text = item.name,
-                    fontSize = 14.sp,
-                    textDecoration = if (item.isChecked) TextDecoration.LineThrough else TextDecoration.None,
-                    color = if (item.isChecked) Color.Gray else Color.Black,
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    if (item.price > 0f) {
-                        Text(
-                            text = String.format("%.2f EUR", item.price),
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                        )
-                    }
-                    if (item.quantity > 1) {
-                        Text(
-                            text = "× ${item.quantity}",
-                            fontSize = 12.sp,
-                            color = Color.Gray,
-                        )
-                    }
-                }
-            }
-
-            // Edit Button
-            IconButton(
-                onClick = onEdit,
-                modifier = Modifier.size(32.dp),
-            ) {
-                Icon(
-                    Icons.Default.Edit,
-                    contentDescription = "Bearbeiten",
-                    tint = Color(0xFF1976D2),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            // Delete Button
-            IconButton(
-                onClick = onDelete,
-                modifier = Modifier.size(32.dp),
-            ) {
-                Icon(
-                    Icons.Default.Delete,
-                    contentDescription = "Löschen",
-                    tint = Color(0xFFE53935),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun AddItemDialog(
-    item: ShoppingItemEntity? = null,
-    onSave: (String, Float, Int) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var name by remember { mutableStateOf(item?.name ?: "") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(if (item == null) "Neuen Artikel hinzufügen" else "Artikel bearbeiten")
-        },
-        text = {
-            TextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Artikel-Name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (name.isNotBlank()) {
-                        onSave(name, 0f, 1)
-                    }
-                }
-            ) {
-                Text("Speichern")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Abbrechen")
-            }
-        }
-    )
-}

@@ -6,10 +6,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.activity.result.contract.ActivityResultContracts
@@ -52,8 +55,18 @@ class MainActivity : ComponentActivity() {
             MaterialTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
                     val viewModel: ShoppingViewModel = hiltViewModel()
+                    val uiState by viewModel.uiState.collectAsState()
                     var showSettings by remember { mutableStateOf(false) }
                     var showIntro by remember { mutableStateOf(true) }
+
+                    // Show Toast when error message appears
+                    val context = LocalContext.current
+                    LaunchedEffect(uiState.errorMessage) {
+                        uiState.errorMessage?.let {
+                            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                            viewModel.clearError()
+                        }
+                    }
 
                     // NEW: Connect camera's real-time text recognition to viewModel
                     cameraManager.onTextRecognized = { recognizedText ->
@@ -73,8 +86,7 @@ class MainActivity : ComponentActivity() {
                             viewModel = viewModel,
                             cameraManager = cameraManager,
                             onScanPrice = {
-                                // This is only called when turning camera ON, not for actual scanning
-                                Log.d("MainActivity", "Camera ON button pressed")
+                                viewModel.activateCamera()
                             },
                             onOpenSettings = { showSettings = true }
                         )

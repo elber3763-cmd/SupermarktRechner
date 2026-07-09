@@ -16,11 +16,11 @@ class ShoppingCartRepository @Inject constructor(
 ) {
     private val dao = database.shoppingItemDao()
 
-    val cartFlow: Flow<ShoppingCart> = dao.getScannedItems().map { items ->
-        val cartItems = items.mapIndexed { index, entity ->
+    val cartFlow: Flow<ShoppingCart> = dao.getAllItems().map { items ->
+        val cartItems = items.filter { it.price > 0 }.map { entity ->
             CartItem(
                 id = entity.id,
-                price = entity.price,
+                price = entity.price * entity.quantity,
                 name = entity.name
             )
         }
