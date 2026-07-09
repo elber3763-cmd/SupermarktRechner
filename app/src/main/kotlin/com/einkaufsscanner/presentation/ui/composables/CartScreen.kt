@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Camera
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -31,6 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -59,7 +62,8 @@ fun ShoppingCartScreen(
     val manualItems by viewModel.cartItems.collectAsState()
     val selectedManualItemId by viewModel.selectedManualItemId.collectAsState()
     val isCameraActive = uiState.isCameraActive
-    var selectedTab by remember { mutableStateOf(0) } // 0 = Scanner, 1 = Shopping List
+    var showAddDialog by remember { mutableStateOf(false) }
+    var editingItem by remember { mutableStateOf<com.einkaufsscanner.data.database.entities.ShoppingItemEntity?>(null) }
 
     // Auto-shutdown camera when inactive to save battery and free resources
     LaunchedEffect(isCameraActive) {
@@ -352,27 +356,6 @@ fun ShoppingCartScreen(
             ),
         )
 
-        // Tab Navigation
-        TabRow(
-            selectedTabIndex = selectedTab,
-            modifier = Modifier.fillMaxWidth(),
-            containerColor = Color(0xFF00897B),
-            contentColor = Color.White,
-        ) {
-            Tab(
-                selected = selectedTab == 0,
-                onClick = { selectedTab = 0 },
-                text = { Text("Scanner", fontSize = 13.sp) },
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-            Tab(
-                selected = selectedTab == 1,
-                onClick = { selectedTab = 1 },
-                text = { Text("Einkaufsliste", fontSize = 13.sp) },
-                modifier = Modifier.padding(horizontal = 8.dp)
-            )
-        }
-
         // Clear Cart Confirmation Dialog
         if (uiState.showClearCartConfirmation) {
             AlertDialog(
@@ -398,201 +381,178 @@ fun ShoppingCartScreen(
             )
         }
 
-        // Content based on selected tab
-        if (selectedTab == 0) {
-            // Scanner Tab
-            Column(modifier = Modifier.weight(1f)) {
-                // Camera Preview Area - Dynamic height with weight(0.5f) to avoid pushing buttons off screen
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(0.5f)
-                        .background(Color.Black),
-                ) {
-                    if (isCameraActive) {
-                        CameraPreviewArea(
-                            cameraManager = cameraManager,
-                            onScanPrice = onScanPrice,
-                            scannerWidthPercent = scannerWidth,
-                            scannerHeightPercent = scannerHeight,
+        // Add Item Dialog for manual shopping list
+        if (showAddDialog || editingItem != null) {
+            AddItemDialog(
+                item = editingItem,
+                onSave = { name, price, quantity ->
+                    if (editingItem != null) {
+                        viewModel.updateItem(
+                            editingItem!!.copy(
+                                name = name,
+                                price = price,
+                                quantity = quantity
+                            )
                         )
                     } else {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
+                        viewModel.addManualItem(name, price, quantity)
+                    }
+                    showAddDialog = false
+                    editingItem = null
+                },
+                onDismiss = {
+                    showAddDialog = false
+                    editingItem = null
+                }
+            )
+        }
+
+        // Unified Screen Layout: Camera on top, Shopping List below
+        Column(modifier = Modifier.weight(1f)) {
+            // Camera Preview Area - Fixed height (320.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(320.dp)
+                    .background(Color.Black),
+            ) {
+                if (isCameraActive) {
+                    CameraPreviewArea(
+                        cameraManager = cameraManager,
+                        onScanPrice = onScanPrice,
+                        scannerWidthPercent = scannerWidth,
+                        scannerHeightPercent = scannerHeight,
+                    )
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Spacer(modifier = Modifier.height(40.dp))
+                        Icon(Icons.Default.Camera, contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(48.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            "Kamera ist aus.\nTippe auf 'Preis scannen', um sie zu starten.",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.weight(1f))
+                        Text(
+                            "💡 Hinweis: Bitte Preise groß und in Blockschrift scannen.",
+                            color = Color(0xFFFFD700),
+                            fontSize = 12.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
+                        )
+                    }
+                }
+
+                // Close Button (Top Right)
+                if (isCameraActive) {
+                    Surface(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp)
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .clickable { viewModel.deactivateCamera() },
+                        shape = CircleShape,
+                        color = Color.Black.copy(alpha = 0.4f),
+                        shadowElevation = 4.dp
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            Spacer(modifier = Modifier.height(40.dp))
-                            Icon(Icons.Default.Camera, contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(48.dp))
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                "Kamera ist aus.\nTippe auf 'Preis scannen', um sie zu starten.",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 14.sp,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            // Handwriting optimization hint
-                            Text(
-                                "💡 Hinweis: Bitte Preise groß und in Blockschrift scannen.",
-                                color = Color(0xFFFFD700),
-                                fontSize = 12.sp,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 20.dp)
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = "Kamera schließen",
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
+                }
+            }
 
-                    // Close Button (Top Right) - Outside camera feed, positioned in corner
-                    if (isCameraActive) {
-                        Surface(
+            // Integrated Shopping List - takes remaining space
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .background(Color.White)
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    if (manualItems.isEmpty()) {
+                        Box(
                             modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(16.dp)
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .clickable { viewModel.deactivateCamera() },
-                            shape = CircleShape,
-                            color = Color.Black.copy(alpha = 0.4f),
-                            shadowElevation = 4.dp
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier.fillMaxSize()
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Rounded.Close,
-                                    contentDescription = "Kamera schließen",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(24.dp)
+                            Text(
+                                "Keine Artikel in der Einkaufsliste.\nKlicke auf + um einen neuen Artikel hinzuzufügen.",
+                                textAlign = TextAlign.Center,
+                                color = Color.Gray,
+                                fontSize = 13.sp
+                            )
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            items(manualItems) { item ->
+                                ShoppingItemRow(
+                                    item = item,
+                                    onCheckChange = { isChecked ->
+                                        viewModel.updateItemCheckedStatus(item.id, isChecked)
+                                    },
+                                    onEdit = { editingItem = item },
+                                    onDelete = { viewModel.deleteItem(item.id) },
                                 )
                             }
                         }
                     }
                 }
 
-                // Manual Items List for Selection - Dynamic with weight(1f)
-                if (manualItems.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .background(Color(0xFFF5F5F5)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "Keine Artikel in der Einkaufsliste.\nFüge Artikel im 'Einkaufsliste'-Tab hinzu.",
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                            color = Color.Gray,
-                            fontSize = 13.sp
-                        )
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        items(manualItems) { item ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(56.dp)
-                                    .clickable { viewModel.selectManualItem(if (selectedManualItemId == item.id) null else item.id) }
-                                    .background(
-                                        if (selectedManualItemId == item.id) Color(0xFFE3F2FD) else Color(0xFFF5F5F5)
-                                    ),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (selectedManualItemId == item.id) Color(0xFFE3F2FD) else Color(0xFFF5F5F5)
-                                ),
-                                elevation = CardDefaults.cardElevation(
-                                    defaultElevation = if (selectedManualItemId == item.id) 4.dp else 1.dp
-                                ),
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                ) {
-                                    Checkbox(
-                                        checked = selectedManualItemId == item.id,
-                                        onCheckedChange = { checked ->
-                                            viewModel.selectManualItem(if (checked) item.id else null)
-                                        },
-                                        modifier = Modifier.size(24.dp)
-                                    )
-
-                                    Text(
-                                        text = item.name,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .padding(start = 8.dp),
-                                        color = if (selectedManualItemId == item.id) Color(0xFF1976D2) else Color.Black
-                                    )
-
-                                    if (selectedManualItemId == item.id) {
-                                        Text(
-                                            text = "→ Ready",
-                                            fontSize = 11.sp,
-                                            color = Color(0xFF4CAF50),
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Scanned items list
-                if (uiState.items.isNotEmpty()) {
-                    Divider(modifier = Modifier.padding(horizontal = 8.dp))
-                    Text(
-                        "Gescannte Artikel",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                    )
-                    CartListSection(
-                        items = uiState.items,
-                        onRemoveItem = { viewModel.removeItem(it) },
-                        onEditItem = { viewModel.startEditingItem(it) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 150.dp),
-                    )
+                // FloatingActionButton - Green + button bottom right
+                FloatingActionButton(
+                    onClick = { showAddDialog = true },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp),
+                    containerColor = Color(0xFF4CAF50),
+                    contentColor = Color.White,
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = "Artikel hinzufügen")
                 }
             }
-
-            // Bottom Action Bar - Fixed height, always visible at bottom (only in Scanner tab)
-            BottomActionBar(
-                total = uiState.total,
-                viewModel = viewModel,
-                onScanPrice = {
-                    if (!isCameraActive) {
-                        viewModel.activateCamera()
-                    } else {
-                        onScanPrice()
-                    }
-                },
-                onManualEntry = {
-                    viewModel.openManualInputDialog()
-                },
-                isLoading = uiState.isLoading,
-                isCameraActive = isCameraActive,
-                cameraManager = cameraManager,
-                modifier = Modifier.fillMaxWidth()
-            )
-        } else {
-            // Shopping List Tab
-            ManualShoppingListScreen(viewModel = viewModel)
         }
+
+        // Bottom Action Bar - Fixed height, always visible at bottom
+        BottomActionBar(
+            total = uiState.total,
+            viewModel = viewModel,
+            onScanPrice = {
+                if (!isCameraActive) {
+                    viewModel.activateCamera()
+                } else {
+                    onScanPrice()
+                }
+            },
+            onManualEntry = {
+                viewModel.openManualInputDialog()
+            },
+            isLoading = uiState.isLoading,
+            isCameraActive = isCameraActive,
+            cameraManager = cameraManager,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         // Show loading indicator
         if (uiState.isLoading) {
@@ -885,5 +845,132 @@ fun PriceSelectionDialog(
                 Text("Manuell")
             }
         },
+    )
+}
+
+@Composable
+fun ShoppingItemRow(
+    item: com.einkaufsscanner.data.database.entities.ShoppingItemEntity,
+    onCheckChange: (Boolean) -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(72.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Checkbox(
+                checked = item.isChecked,
+                onCheckedChange = onCheckChange,
+                modifier = Modifier.size(24.dp)
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp)
+            ) {
+                Text(
+                    text = item.name,
+                    fontSize = 14.sp,
+                    textDecoration = if (item.isChecked) TextDecoration.LineThrough else TextDecoration.None,
+                    color = if (item.isChecked) Color.Gray else Color.Black,
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (item.price > 0f) {
+                        Text(
+                            text = String.format("%.2f EUR", item.price),
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                        )
+                    }
+                    if (item.quantity > 1) {
+                        Text(
+                            text = "× ${item.quantity}",
+                            fontSize = 12.sp,
+                            color = Color.Gray,
+                        )
+                    }
+                }
+            }
+
+            IconButton(
+                onClick = onEdit,
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Bearbeiten",
+                    tint = Color(0xFF1976D2),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Löschen",
+                    tint = Color(0xFFE53935),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AddItemDialog(
+    item: com.einkaufsscanner.data.database.entities.ShoppingItemEntity? = null,
+    onSave: (String, Float, Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf(item?.name ?: "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(if (item == null) "Neuen Artikel hinzufügen" else "Artikel bearbeiten")
+        },
+        text = {
+            TextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Artikel-Name") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    if (name.isNotBlank()) {
+                        onSave(name, 0f, 1)
+                    }
+                }
+            ) {
+                Text("Speichern")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Abbrechen")
+            }
+        }
     )
 }
